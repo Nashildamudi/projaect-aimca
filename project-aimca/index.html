@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Daily Prompt App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --high-priority: #ff3b30;
+      --medium-priority: #ff9500;
+      --low-priority: #34c759;
+      --teal-dark: #00796b;
+      --teal-light: #b2dfdb;
+      --white: #ffffff;
+      --shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      --toast-circle-bg: rgba(0, 121, 107, 0.9);
+      --background: linear-gradient(135deg, var(--teal-light), var(--teal-dark));
+      --section-bg: var(--white);
+      --text-color: #333;
+      --card-bg: var(--white);
+    }
+    [data-theme="dark"] {
+      --background: linear-gradient(135deg, #1c2526, #2e4f4f);
+      --section-bg: #2e4f4f;
+      --text-color: #e0f2f1;
+      --card-bg: #3a5f5f;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Poppins", sans-serif;
+    }
+    body {
+      background: var(--background);
+      min-height: 100vh;
+      padding: 20px;
+      color: var(--text-color);
+    }
+    .section {
+      display: none;
+      background: var(--section-bg);
+      border-radius: 20px;
+      padding: 25px;
+      max-width: 600px;
+      margin: 20px auto;
+      box-shadow: var(--shadow);
+    }
+    .active {
+      display: block;
+    }
+    .center {
+      text-align: center;
+    }
+    .btn {
+      background-color: var(--teal-dark);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 5px;
+      transition: all 0.5s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    .priority-High {
+      border-left: 5px solid var(--high-priority);
+    }
+    .priority-Medium {
+      border-left: 5px solid var(--medium-priority);
+    }
+    .priority-Low {
+      border-left: 5px solid var(--low-priority);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .card {
+      background: var(--card-bg);
+      border-radius: 15px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    .card i {
+      color: var(--teal-dark);
+      margin-bottom: 10px;
+    }
+    input,
+    select {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      background: var(--section-bg);
+      color: var(--text-color);
+    }
+    .day-selector {
+      margin: 15px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .day-selector label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      user-select: none;
+    }
+    .toast {
+      visibility: hidden;
+      min-width: 280px;
+      max-width: 90vw;
+      background: var(--teal-dark);
+      color: white;
+      text-align: center;
+      border-radius: 12px;
+      padding: 15px 20px;
+      position: fixed;
+      z-index: 9999;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.5s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    .toast-reminder {
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .toast .circle-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--toast-circle-bg);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    }
+    .toast.show {
+      visibility: visible;
+      opacity: 1;
+    }
+    .task-item {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 8px;
+      background: #f5f5f5;
+    }
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .task-details {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: #555;
+      margin-top: 4px;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .priority-badge {
+      font-weight: 600;
+      color: var(--teal-dark);
+      text-transform: uppercase;
+      padding: 2px 10px;
+      border-radius: 12px;
+      background: #e0f2f1;
+    }
+    .task-time {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--teal-dark);
+    }
+    .task-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .complete-btn {
+      background-color: var(--teal-light);
+      color: #004d40;
+      font-weight: 600;
+    }
+    .complete-btn:hover {
+      background-color: #004d40;
+      color: var(--teal-light);
+    }
+    .delete-btn {
+      background-color: var(--high-priority);
+      color: white;
+      font-weight: 600;
+    }
+    .delete-btn:hover {
+      background-color: #b22b24;
+    }
+    .edit-btn {
+      background-color: #6b7280;
+      color: white;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      transition: background-color 0.3s;
+    }
+    .edit-btn:hover {
+      background-color: #4b5563;
+    }
+    .emoji-btn {
+      font-size: 18px;
+      padding: 8px 12px;
+      min-width: 40px;
+      line-height: 1;
+    }
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--text-color);
+    }
+    .logo {
+      display: inline-block;
+      font-size: 32px;
+      margin-right: 10px;
+      vertical-align: middle;
+      color: var(--teal-dark);
+    }
+    #notif-list li, #history-list li {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 8px;
+      list-style: none;
+    }
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .section {
+        padding: 15px;
+      }
+      .toast {
+        min-width: 250px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"><div class="circle-icon"><i class="fas fa-clock"></i></div><span id="toast-msg"></span></div>
+  <audio id="notification-sound" src="https://freesound.org/data/previews/316/316847_4939433-lq.mp3" preload="auto"></audio>
+  <audio id="notification-sound-fallback" src="https://freesound.org/data/previews/250/250629_4659939-lq.mp3" preload="auto"></audio>
+
+  <!-- Welcome Page -->
+  <div id="welcome" class="section active center">
+    <h1>Welcome to Daily Prompt</h1>
+    <p>Your smart way to stay on track every day.</p>
+    <button class="btn" onclick="showSection('register')">Register</button>
+    <button class="btn" onclick="showSection('login')">Login</button>
+  </div>
+
+  <!-- Register Page -->
+  <div id="register" class="section center">
+    <h2>Register</h2>
+    <input type="text" id="regName" placeholder="Your Name" />
+    <input type="email" id="regEmail" placeholder="Email" />
+    <input type="password" id="regPassword" placeholder="Password" />
+    <button class="btn" onclick="register()">Register</button>
+    <p>Already have an account? <a href="#" onclick="showSection('login')">Login</a></p>
+  </div>
+
+  <!-- Login Page -->
+  <div id="login" class="section center">
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Email" />
+    <input type="password" id="loginPassword" placeholder="Password" />
+    <button class="btn" onclick="login()">Login</button>
+    <p>New user? <a href="#" onclick="showSection('register')">Register</a></p>
+  </div>
+
+  <!-- Home Page -->
+  <div id="home" class="section">
+    <button class="theme-toggle" onclick="toggleTheme()">
+      <i class="fas fa-moon"></i>
+    </button>
+    <div class="center">
+      <i class="fas fa-calendar-check logo"></i>
+      <h1 style="display: inline-block;">Daily Prompt</h1>
+      <h2 id="welcomeMessage">Hey, <span id="username">User</span>!</h2>
+    </div>
+    <div class="grid">
+      <div class="card" onclick="showSection('personal')">
+        <i class="fas fa-user fa-3x"></i>
+        <p>Personal Info</p>
+      </div>
+      <div class="card" onclick="showSection('tasks')">
+        <i class="fas fa-tasks fa-3x"></i>
+        <p>Tasks</p>
+      </div>
+      <div class="card" onclick="showSection('notifications')">
+        <i class="fas fa-bell fa-3x"></i>
+        <p>Reminders</p>
+      </div>
+      <div class="card" onclick="showSection('streak')">
+        <i class="fas fa-fire fa-3x" style="color: var(--teal-dark);"></i>
+        <p>Streak: <span id="streak-count">0</span> days</p>
+      </div>
+      <div class="card" onclick="showSection('history')">
+        <i class="fas fa-history fa-3x"></i>
+        <p>History</p>
+      </div>
+      <div class="card" onclick="logout()">
+        <i class="fas fa-sign-out-alt fa-3x"></i>
+        <p>Logout</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal Info Page -->
+  <div id="personal" class="section">
+    <h2>Personal Information</h2>
+    <p>Name: <span id="userName"></span></p>
+    <p>Email: <span id="userEmail"></span></p>
+    <button class="btn" onclick="showSection('home')">Back</button>
+  </div>
+
+  <!-- Tasks Page -->
+  <div id="tasks" class="section">
+    <h2>Add Task</h2>
+    <input type="text" id="task-name" placeholder="Task name" />
+    <select id="task-priority">
+      <option value="High">🔴 High Priority</option>
+      <option value="Medium">🟠 Medium Priority</option>
+      <option value="Low">🟢 Low Priority</option>
+    </select>
+    <div class="day-selector">
+      <label><input type="checkbox" class="day-checkbox" value="Everyday" /> Everyday</label>
+      <label><input type="checkbox" class="day-checkbox" value="Mon" /> Mon</label>
+      <label><input type="checkbox" class="day-checkbox" value="Tue" /> Tue</label>
+      <label><input type="checkbox" class="day-checkbox" value="Wed" /> Wed</label>
+      <label><input type="checkbox" class="day-checkbox" value="Thu" /> Thu</label>
+      <label><input type="checkbox" class="day-checkbox" value="Fri" /> Fri</label>
+      <label><input type="checkbox" class="day-checkbox" value="Sat" /> Sat</label>
+      <label><input type="checkbox" class="day-checkbox" value="Sun" /> Sun</label>
+    </div>
+    <input type="time" id="task-time" />
+    <button class="btn" onclick="addTask()">Add Task</button>
+    <button class="btn" onclick="showSection('home')">Back</button>
+    <h3>Your Tasks</h3>
+    <div id="task-list"></div>
+  </div>
+
+  <!-- Notifications Page -->
+  <div id="notifications" class="section">
+    <h2>Today's Reminders</h2>
+    <ul id="notif-list"></ul>
+    <button class="btn" onclick="showSection('home')">Back</button>
+  </div>
+
+  <!-- Streak Page -->
+  <div id="streak" class="section center">
+    <i class="fas fa-fire fa-5x" style="color:#ff3b30; margin: 20px;"></i>
+    <h2>Current Streak</h2>
+    <p style="font-size: 24px;"><span id="streak-display">0</span> days</p>
+    <button class="btn" onclick="showSection('home')">Back</button>
+  </div>
+
+  <!-- History Page -->
+  <div id="history" class="section">
+    <h2>Completed Tasks</h2>
+    <ul id="history-list"></ul>
+    <button class="btn" onclick="showSection('home')">Back</button>
+  </div>
+
+  <script>
+    let tasks = [];
+    let streak = 0;
+    let currentUser = JSON.parse(localStorage.getItem('dp_currentUser') || '{}');
+    let notificationTimeouts = [];
+    let editTaskIndex = null;
+    let lastStreakUpdate = localStorage.getItem(`dp_lastStreakUpdate_${currentUser?.email || ''}`);
+    let lastCompletionDay = localStorage.getItem(`dp_lastCompletionDay_${currentUser?.email || ''}`);
+    let audioUnlocked = false;
+    let audioContext = null;
+    let completedTasksToday = new Set(JSON.parse(localStorage.getItem(`dp_completedTasks_${currentUser?.email || ''}`) || '[]'));
+    let completedTasksHistory = JSON.parse(localStorage.getItem(`dp_completedTasksHistory_${currentUser?.email || ''}`) || '[]');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM loaded, initializing app');
+      initializeApp();
+      setupNotificationPermission();
+      loadTheme();
+      setupAudioUnlock();
+      console.log(`Total Users: ${getUserCount()}`);
+    });
+
+    function setupAudioUnlock() {
+      const unlockAudio = () => {
+        if (!audioUnlocked) {
+          try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const buffer = audioContext.createBuffer(1, 1, 22050);
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start(0);
+            audioUnlocked = true;
+            console.log('Audio context unlocked successfully');
+            const audio = document.getElementById('notification-sound');
+            audio.load();
+            audio.play().then(() => {
+              audio.pause();
+              audio.currentTime = 0;
+              console.log('Notification sound preloaded');
+            }).catch(error => console.error('Notification sound preload failed:', error));
+          } catch (error) {
+            console.error('Audio context unlock failed:', error);
+            showToast('Click anywhere to enable sound.');
+          }
+          document.removeEventListener('click', unlockAudio);
+          document.removeEventListener('touchstart', unlockAudio);
+        }
+      };
+      document.addEventListener('click', unlockAudio);
+      document.addEventListener('touchstart', unlockAudio);
+    }
+
+    async function playNotificationSound() {
+      if (!audioUnlocked) {
+        console.log('Audio not unlocked, cannot play sound');
+        throw new Error('Audio not unlocked');
+      }
+      let audio = document.getElementById('notification-sound');
+      try {
+        audio.currentTime = 0;
+        await audio.play();
+        console.log('Primary notification sound played successfully');
+      } catch (error) {
+        console.error('Primary notification sound failed:', error);
+        audio = document.getElementById('notification-sound-fallback');
+        try {
+          audio.currentTime = 0;
+          await audio.play();
+          console.log('Fallback notification sound played successfully');
+        } catch (fallbackError) {
+          console.error('Fallback notification sound failed:', fallbackError);
+          throw fallbackError;
+        }
+      }
+    }
+
+    function initializeApp() {
+      if (currentUser && currentUser.email && getUserByEmail(currentUser.email)) {
+        console.log('User logged in:', currentUser.email);
+        checkDailyStreakReset();
+        updateUserDisplay();
+        showSection('home');
+        loadTasks();
+        loadHistory();
+        scheduleAllNotifications();
+        updateStreakDisplay();
+      } else {
+        console.log('No valid user, showing welcome page');
+        currentUser = null;
+        localStorage.removeItem('dp_currentUser');
+        showSection('welcome');
+      }
+    }
+
+    function checkDailyStreakReset() {
+      const today = new Date().toDateString();
+      if (lastStreakUpdate && lastStreakUpdate !== today) {
+        const prevDay = lastStreakUpdate;
+        const hasCompletedPrevDay = tasks.some(task => {
+          if (task.completed && task.completedTime) {
+            const taskTime = calculateNotificationTime(task.time);
+            const completedTime = new Date(task.completedTime);
+            return completedTime.toDateString() === prevDay && taskTime <= completedTime && shouldNotifyToday(task.days);
+          }
+          return false;
+        });
+        if (!hasCompletedPrevDay) {
+          console.log('No tasks completed on previous day, resetting streak');
+          streak = 0;
+          completedTasksToday.clear();
+          localStorage.setItem(`dp_completedTasks_${currentUser?.email || ''}`, JSON.stringify([...completedTasksToday]));
+          updateStreakDisplay();
+        }
+      }
+      lastStreakUpdate = today;
+      if (currentUser) {
+        localStorage.setItem(`dp_lastStreakUpdate_${currentUser.email}`, today);
+      }
+    }
+
+    function showSection(id) {
+      console.log(`Navigating to section: ${id}`);
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === 'notifications') displayNotifications();
+      if (id === 'tasks') {
+        if (editTaskIndex === null) resetTaskForm();
+        displayTasks();
+      }
+      if (id === 'streak') updateStreakDisplay();
+      if (id === 'history') displayHistory();
+      if (id === 'register') clearRegistrationInputs();
+      if (id === 'login') clearLoginInputs();
+    }
+
+    function showToast(msg, isReminder = false) {
+      console.log(`Showing toast: ${msg}, isReminder: ${isReminder}`);
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = msg;
+      if (isReminder && /chore/i.test(msg)) {
+        toast.classList.add('toast-reminder');
+      } else {
+        toast.classList.remove('toast-reminder');
+      }
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), isReminder ? 5000 : 3000);
+    }
+
+    function register() {
+      console.log('Register function called');
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim().toLowerCase();
+      const pwd = document.getElementById('regPassword').value.trim();
+      if (!validateRegistration(name, email, pwd)) {
+        clearRegistrationInputs();
+        return;
+      }
+      if (isEmailRegistered(email)) {
+        showToast('Email already registered!');
+        clearRegistrationInputs();
+        return;
+      }
+      saveUserData(name, email, pwd);
+      tasks = [];
+      streak = 0;
+      completedTasksToday.clear();
+      completedTasksHistory = [];
+      lastStreakUpdate = new Date().toDateString();
+      lastCompletionDay = null;
+      localStorage.setItem(`dp_lastStreakUpdate_${email}`, lastStreakUpdate);
+      localStorage.setItem(`dp_lastCompletionDay_${email}`, lastCompletionDay || '');
+      localStorage.setItem(`dp_completedTasks_${email}`, JSON.stringify([...completedTasksToday]));
+      localStorage.setItem(`dp_completedTasksHistory_${email}`, JSON.stringify(completedTasksHistory));
+      saveTasks();
+      updateStreakDisplay();
+      updateUserDisplay();
+      showSection('home');
+      showToast(`Welcome, ${name}! 🌟`);
+      console.log(`Total Users: ${getUserCount()}`);
+    }
+
+    function clearRegistrationInputs() {
+      document.getElementById('regName').value = '';
+      document.getElementById('regEmail').value = '';
+      document.getElementById('regPassword').value = '';
+    }
+
+    function login() {
+      console.log('Login function called');
+      const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+      const pwd = document.getElementById('loginPassword').value.trim();
+      const user = getUserByEmail(email);
+      if (user && user.password === btoa(pwd)) {
+        currentUser = { email, name: user.name };
+        localStorage.setItem('dp_currentUser', JSON.stringify(currentUser));
+        lastStreakUpdate = localStorage.getItem(`dp_lastStreakUpdate_${email}`) || new Date().toDateString();
+        lastCompletionDay = localStorage.getItem(`dp_lastCompletionDay_${email}`);
+        completedTasksToday = new Set(JSON.parse(localStorage.getItem(`dp_completedTasks_${email}`) || '[]'));
+        completedTasksHistory = JSON.parse(localStorage.getItem(`dp_completedTasksHistory_${email}`) || '[]');
+        loadTasks();
+        loadHistory();
+        checkDailyStreakReset();
+        updateUserDisplay();
+        showSection('home');
+        scheduleAllNotifications();
+        showToast(`Welcome back, ${user.name}!`);
+      } else {
+        showToast('Invalid credentials 🔒');
+        clearLoginInputs();
+      }
+    }
+
+    function clearLoginInputs() {
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+    }
+
+    function isEmailRegistered(email) {
+      const users = JSON.parse(localStorage.getItem('dp_users') || '[]');
+      return users.some(u => u.email === email);
+    }
+
+    function saveUserData(name, email, pwd) {
+      let users = JSON.parse(localStorage.getItem('dp_users') || '[]');
+      users.push({ email, name, password: btoa(pwd) });
+      localStorage.setItem('dp_users', JSON.stringify(users));
+      localStorage.setItem('dp_currentUser', JSON.stringify({ name, email }));
+      currentUser = { name, email };
+    }
+
+    function getUserByEmail(email) {
+      const users = JSON.parse(localStorage.getItem('dp_users') || '[]');
+      return users.find(u => u.email === email);
+    }
+
+    function getUserCount() {
+      const users = JSON.parse(localStorage.getItem('dp_users') || '[]');
+      return users.length;
+    }
+
+    function addTask() {
+      const taskData = getTaskFormData();
+      if (!validateTaskForm(taskData)) return;
+      if (editTaskIndex !== null) {
+        tasks[editTaskIndex] = { ...tasks[editTaskIndex], ...taskData, completed: false, created: new Date().toISOString() };
+        editTaskIndex = null;
+        showToast(`Task "${taskData.name}" updated! ✅`);
+      } else {
+        tasks.push(createTaskObject(taskData));
+        showToast(`Task "${taskData.name}" added! ✅`);
+      }
+      saveTasks();
+      scheduleAllNotifications();
+      resetTaskForm();
+      displayTasks();
+    }
+
+    function editTask(index) {
+      editTaskIndex = index;
+      const task = tasks[index];
+      document.getElementById('task-name').value = task.name;
+      document.getElementById('task-time').value = task.time;
+      document.getElementById('task-priority').value = task.priority;
+      document.querySelectorAll('.day-checkbox').forEach(el => el.checked = task.days.includes(el.value));
+      showSection('tasks');
+    }
+
+    function deleteTask(index) {
+      if (!confirm('Permanently delete this task?')) return;
+      if (notificationTimeouts[index]) clearTimeout(notificationTimeouts[index]);
+      tasks.splice(index, 1);
+      saveTasks();
+      displayTasks();
+      showToast('Task deleted ❌');
+    }
+
+    function completeTask(index) {
+      if (!currentUser) {
+        showToast('Please login to complete tasks');
+        return;
+      }
+      const task = tasks[index];
+      if (!task) {
+        showToast('Task not found');
+        return;
+      }
+      const taskTime = calculateNotificationTime(task.time);
+      const now = new Date();
+      const today = now.toDateString();
+      const taskId = `${task.name}_${task.time}_${task.created}`;
+      if (shouldNotifyToday(task.days)) {
+        if (!task.completed && !completedTasksToday.has(taskId)) {
+          tasks[index].completed = true;
+          tasks[index].completedTime = now.toISOString();
+          completedTasksToday.add(taskId);
+          completedTasksHistory.push({
+            name: task.name,
+            priority: task.priority,
+            days: task.days,
+            completedTime: task.completedTime,
+            completedDate: today
+          });
+          if (lastCompletionDay !== today) {
+            streak++;
+            lastCompletionDay = today;
+            localStorage.setItem(`dp_lastCompletionDay_${currentUser.email}`, today);
+          }
+          lastStreakUpdate = today;
+          localStorage.setItem(`dp_lastStreakUpdate_${currentUser.email}`, today);
+          localStorage.setItem(`dp_completedTasks_${currentUser.email}`, JSON.stringify([...completedTasksToday]));
+          localStorage.setItem(`dp_completedTasksHistory_${currentUser.email}`, JSON.stringify(completedTasksHistory));
+          localStorage.setItem(`dp_streak_${currentUser.email}`, streak);
+          updateStreakDisplay();
+          displayHistory();
+          showToast('Great job! Streak extended! ✅');
+        } else {
+          showToast('Task already completed today! 😊');
+        }
+      } else {
+        showToast('Task not scheduled for today! 📅');
+      }
+      saveTasks();
+      displayTasks();
+    }
+
+    function displayHistory() {
+      const list = document.getElementById('history-list');
+      if (completedTasksHistory.length === 0) {
+        list.innerHTML = '<li>No completed tasks yet.</li>';
+        return;
+      }
+      list.innerHTML = completedTasksHistory.map(task => `
+        <li class="task-item priority-${task.priority}">
+          <div class="task-header">
+            <h4>${task.name}</h4>
+            <span class="task-time">${new Date(task.completedTime).toLocaleString()}</span>
+          </div>
+          <div class="task-details">
+            <span class="priority-badge">${task.priority}</span>
+            <span class="task-days">📅 ${task.days.join(', ')}</span>
+          </div>
+        </li>
+      `).join('');
+    }
+
+    function loadHistory() {
+      if (currentUser) {
+        completedTasksHistory = JSON.parse(localStorage.getItem(`dp_completedTasksHistory_${currentUser.email}`) || '[]');
+      } else {
+        completedTasksHistory = [];
+      }
+      displayHistory();
+    }
+
+    function scheduleAllNotifications() {
+      notificationTimeouts.forEach(clearTimeout);
+      notificationTimeouts = [];
+      tasks.forEach((task, index) => {
+        if (!task.completed) scheduleNotification(task, index);
+      });
+    }
+
+    function scheduleNotification(task, index) {
+      if (!('Notification' in window)) return;
+      const notifyTime = calculateNotificationTime(task.time);
+      const now = new Date();
+      let delay = notifyTime.getTime() - now.getTime();
+      if (delay < 0) delay += 86400000; // Next day
+      if (delay > 86400000) return;
+      const timeoutId = setTimeout(() => {
+        if (shouldNotifyToday(task.days) && !task.completed) {
+          triggerNotification(task);
+          scheduleNotification(task, index);
+        }
+      }, delay);
+      notificationTimeouts[index] = timeoutId;
+    }
+
+    function triggerNotification(task) {
+      if (Notification.permission === 'granted') {
+        new Notification(`⏰ Time for: ${task.name}`, { body: `Priority: ${task.priority}` });
+      }
+      showToast(`Time for ${task.name}! ⏰`, true);
+      playNotificationSound().catch(error => {
+        console.error('Notification sound failed:', error);
+        showToast('Click anywhere to enable sound.');
+      });
+      if (navigator.vibrate) navigator.vibrate(200);
+    }
+
+    function displayNotifications() {
+      const list = document.getElementById('notif-list');
+      const todayTasks = tasks.filter(task => shouldNotifyToday(task.days) && !task.completed);
+      list.innerHTML = todayTasks.length === 0 ? '<li>No reminders for today.</li>' : todayTasks.map(task => `
+        <li>
+          ${task.name} - ${formatTime(task.time)} 
+          <span class="priority-badge">${task.priority}</span>
+        </li>
+      `).join('');
+    }
+
+    function getTaskFormData() {
+      const name = document.getElementById('task-name').value.trim();
+      const time = document.getElementById('task-time').value;
+      const priority = document.getElementById('task-priority').value;
+      const days = Array.from(document.querySelectorAll('.day-checkbox:checked')).map(el => el.value);
+      return { name, time, priority, days };
+    }
+
+    function validateRegistration(name, email, pwd) {
+      if (!name || !email || !pwd) {
+        showToast('Please fill all fields');
+        return false;
+      }
+      if (!/^[A-Za-z\s]+$/.test(name)) {
+        showToast('Name must only contain letters and spaces');
+        return false;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showToast('Invalid email format');
+        return false;
+      }
+      if (pwd.length !== 6) {
+        showToast('Password must be exactly 6 characters');
+        return false;
+      }
+      return true;
+    }
+
+    function validateTaskForm({ name, time, priority, days }) {
+      if (!name) {
+        showToast('Enter a task name');
+        return false;
+      }
+      if (!time) {
+        showToast('Select a time');
+        return false;
+      }
+      if (days.length === 0) {
+        showToast('Select at least one day');
+        return false;
+      }
+      return true;
+    }
+
+    function createTaskObject({ name, time, priority, days }) {
+      return { name, time, priority, days, completed: false, created: new Date().toISOString() };
+    }
+
+    function calculateNotificationTime(timeString) {
+      const [h, m] = timeString.split(':').map(Number);
+      const notifyTime = new Date();
+      notifyTime.setHours(h, m, 0, 0);
+      if (notifyTime < new Date()) notifyTime.setDate(notifyTime.getDate() + 1);
+      return notifyTime;
+    }
+
+    function shouldNotifyToday(days) {
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const today = dayNames[new Date().getDay()];
+      return days.includes('Everyday') || days.includes(today);
+    }
+
+    function updateUserDisplay() {
+      if (!currentUser) return;
+      document.getElementById('username').textContent = currentUser.name;
+      document.getElementById('userName').textContent = currentUser.name;
+      document.getElementById('userEmail').textContent = currentUser.email;
+    }
+
+    function updateStreakDisplay() {
+      document.getElementById('streak-count').textContent = streak;
+      document.getElementById('streak-display').textContent = streak;
+      if (currentUser) {
+        localStorage.setItem(`dp_streak_${currentUser.email}`, streak);
+      }
+    }
+
+    function displayTasks() {
+      const list = document.getElementById('task-list');
+      if (tasks.length === 0) {
+        list.innerHTML = '<p>No tasks added yet.</p>';
+        return;
+      }
+      list.innerHTML = tasks.map((task, i) => `
+        <div class="task-item priority-${task.priority}">
+          <div class="task-header">
+            <h4>${task.name}</h4>
+            <span class="task-time">${formatTime(task.time)}</span>
+          </div>
+          <div class="task-details">
+            <span class="priority-badge">${task.priority}</span>
+            <span class="task-days">📅 ${task.days.join(', ')}</span>
+          </div>
+          <div class="task-actions">
+            <button class="edit-btn emoji-btn" onclick="editTask(${i})">✏️</button>
+            <button class="complete-btn emoji-btn" onclick="completeTask(${i})">✅</button>
+            <button class="delete-btn emoji-btn" onclick="deleteTask(${i})">❌</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function resetTaskForm() {
+      document.getElementById('task-name').value = '';
+      document.getElementById('task-time').value = '';
+      document.getElementById('task-priority').value = 'High';
+      document.querySelectorAll('.day-checkbox').forEach(el => el.checked = false);
+    }
+
+    function saveTasks() {
+      if (currentUser) {
+        localStorage.setItem(`dp_tasks_${currentUser.email}`, JSON.stringify(tasks));
+      }
+    }
+
+    function loadTasks() {
+      if (currentUser) {
+        const saved = localStorage.getItem(`dp_tasks_${currentUser.email}`);
+        tasks = saved ? JSON.parse(saved) : [];
+        streak = parseInt(localStorage.getItem(`dp_streak_${currentUser.email}`) || '0');
+        lastCompletionDay = localStorage.getItem(`dp_lastCompletionDay_${currentUser.email}`);
+        completedTasksToday = new Set(JSON.parse(localStorage.getItem(`dp_completedTasks_${currentUser.email}`) || '[]'));
+      } else {
+        tasks = [];
+        streak = 0;
+        completedTasksToday.clear();
+      }
+      displayTasks();
+    }
+
+    function formatTime(time) {
+      let [h, m] = time.split(':').map(Number);
+      const ampm = h < 12 ? 'AM' : 'PM';
+      h = h % 12 || 12;
+      return `${h}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    function setupNotificationPermission() {
+      if ('Notification' in window && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    }
+
+    function toggleTheme() {
+      const body = document.body;
+      const currentTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      body.setAttribute('data-theme', currentTheme);
+      document.querySelector('.theme-toggle i').className = currentTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+      localStorage.setItem('dp_theme', currentTheme);
+    }
+
+    function loadTheme() {
+      const savedTheme = localStorage.getItem('dp_theme') || 'light';
+      document.body.setAttribute('data-theme', savedTheme);
+      document.querySelector('.theme-toggle i').className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+
+    function logout() {
+      currentUser = null;
+      localStorage.removeItem('dp_currentUser');
+      notificationTimeouts.forEach(clearTimeout);
+      notificationTimeouts = [];
+      tasks = [];
+      streak = 0;
+      completedTasksToday.clear();
+      completedTasksHistory = [];
+      lastCompletionDay = null;
+      lastStreakUpdate = null;
+      showSection('welcome');
+    }
+  </script>
+</body>
+</html>
